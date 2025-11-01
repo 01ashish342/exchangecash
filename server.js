@@ -90,7 +90,12 @@ app.post("/submit", async (req, res) => {
 
     console.log(" Match Created:", newMatch._id);
 
-    res.json({ status: "matched", matchId: newMatch._id });
+// ✅ Notify both users in real-time
+io.emit("matchFound", { matchId: newMatch._id });
+
+// ✅ Response to the user who submitted second
+res.json({ status: "matched", matchId: newMatch._id });
+
   } catch (error) {
     console.log(" Error:", error);
     res.status(500).json({ error: "Server Error" });

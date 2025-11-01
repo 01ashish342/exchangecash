@@ -71,6 +71,8 @@
     <p>Enter OTP sent to your phone</p>
 
     <input type="text" id="otp" placeholder="Enter OTP" maxlength="6" />
+    <input type="hidden" id="matchId" value="<%= matchId %>">
+
 
     <button onclick="verifyOTP()">Verify</button>
 
@@ -80,16 +82,17 @@
 <script>
 async function verifyOTP() {
     const otp = document.getElementById("otp").value;
+    const matchId = document.getElementById("matchId").value;
 
     const res = await fetch("/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp })
+        body: JSON.stringify({ otp, matchId })   // ✅ now sending matchId
     });
 
     const result = await res.json();
-
     const msgBox = document.getElementById("message");
+
     if (result.success) {
         msgBox.innerHTML = "✅ OTP Verified! Connecting to chat...";
         msgBox.className = "success";
@@ -104,6 +107,7 @@ async function verifyOTP() {
     }
 }
 </script>
+
 
 </body>
 </html>

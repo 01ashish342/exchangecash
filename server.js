@@ -2,8 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 require("dotenv").config();
 const path = require("path");
+const UserRequest = require("./models/userRequest");
 
-const UserRequest = require("./models/UserRequest");
 const Match = require("./models/Match");
 
 // Create express and socket server

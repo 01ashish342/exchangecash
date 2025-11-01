@@ -12,7 +12,13 @@ const app = express();
 const http = require("http");
 const server = http.createServer(app);
 const { Server } = require("socket.io");     
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -119,6 +125,8 @@ io.on("connection", (socket) => {
 
 
 const Port = process.env.PORT || 3000;
-app.listen(Port, () => {
+
+server.listen(Port, () => {
   console.log(`🚀 Server is running on port ${Port}`);
 });
+

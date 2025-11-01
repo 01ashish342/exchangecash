@@ -112,6 +112,11 @@ app.post("/verify-otp", (req, res) => {
   res.json({ success: false });
 });
 
+app.get("/chat", (req, res) => {
+  res.render("chat", { matchId: req.query.matchId });
+});
+
+
 
 io.on("connection", (socket) => {
   socket.on("joinRoom", (matchId) => {

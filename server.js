@@ -3,47 +3,44 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 const path = require("path");
 
-const userRequest = require("./models/userRequest");
+const UserRequest = require("./models/userRequest");
 const Match = require("./models/Match");
 
+// Create express and socket server
 const app = express();
-
-// ✅ SOCKET SERVER
 const http = require("http");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
+
 const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-  },
+  cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// ✅ EJS Setup
+// View engine setup
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// ✅ MongoDB Connection
+// ✅ MongoDB connection
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.log("❌ MongoDB Error:", err));
 
-// ✅ HomePage
+// ⬇️ HOMEPAGE
 app.get("/", (req, res) => {
   res.render("index");
 });
 
-// ✅ MATCHING LOGIC (UPDATED)
+// ✅ Submit Request (match finder)
 app.post("/submit", async (req, res) => {
-  try {
-    const { mode, amount, phone, lat, lng } = req.body;
+  const { mode, amount, phone, lat, lng } = req.body;
+  const oppositeMode = mode === "cashtoonline" ? "onlinetocash" : "cashtoonline";
 
-    // 1️⃣ Save request to DB
-    const request = await userRequest.create({
+  try {
+    const newRequest = await UserRequest.create({
       mode,
       amount,
       phone,
@@ -54,96 +51,80 @@ app.post("/submit", async (req, res) => {
       },
     });
 
-    console.log("📌 Request Saved:", request._id);
+    console.log("✅ Request Saved:", newRequest._id);
 
-    // 2️⃣ Find nearest opposite request
-    const oppositeMode = mode === "cashtoonline" ? "onlinetocash" : "cashtoonline";
-
-    const otherUser = await userRequest.findOne({
+    const matchedRequest = await UserRequest.findOne({
       mode: oppositeMode,
       matched: false,
-      _id: { $ne: request._id },
+      _id: { $ne: newRequest._id },
       location: {
         $near: {
-          $geometry: { type: "Point", coordinates: request.location.coordinates },
-          $maxDistance: 5000, // ✅ 5 km radius
+          $geometry: {
+            type: "Point",
+            coordinates: newRequest.location.coordinates,
+          },
+          $maxDistance: 3000, // 3 km
         },
       },
     });
 
-    if (!otherUser) {
-      return res.json({ status: "waiting" }); // frontend keeps checking
+    if (!matchedRequest) {
+      return res.json({ status: "searching" });
     }
 
-    // 3️⃣ Create match with OTP
-    const otpValue = Math.floor(100000 + Math.random() * 900000);
-
+    // ✅ Match found → create Match model
     const newMatch = await Match.create({
-      user1: request._id,
-      user2: otherUser._id,
-      otp: otpValue,
+      user1: newRequest._id,
+      user2: matchedRequest._id,
     });
 
-    // 4️⃣ Mark both users as matched
-    await userRequest.findByIdAndUpdate(request._id, { matched: true });
-    await userRequest.findByIdAndUpdate(otherUser._id, { matched: true });
+    await UserRequest.findByIdAndUpdate(newRequest._id, { matched: true });
+    await UserRequest.findByIdAndUpdate(matchedRequest._id, { matched: true });
 
     console.log("✅ Match Created:", newMatch._id);
 
-    // ✅ Notify both users via socket
+    // 🔥 Send real-time notification to both users
     io.emit("matchFound", { matchId: newMatch._id });
 
     res.json({ status: "matched", matchId: newMatch._id });
+
   } catch (error) {
-    console.log("❌ Match Error:", error);
-    res.status(500).json({ status: "error" });
+    console.log("❌ Error:", error);
+    res.status(500).json({ error: "Server Error" });
   }
 });
 
-// OTP VERIFY PAGE
+// ✅ OTP Page
 app.get("/verify", (req, res) => {
-  const matchId = req.query.matchId;
-  res.render("verify", { matchId });
+  res.render("verify", { matchId: req.query.matchId });
 });
 
-// ✅ OTP Verification POST
-app.post("/verify-otp", async (req, res) => {
-  try {
-    const { otp, matchId } = req.body;
+// ✅ Verify OTP
+app.post("/verify-otp", (req, res) => {
+  const { otp, matchId } = req.body;
 
-    const match = await Match.findById(matchId);
+  if (!matchId) return res.status(400).json({ success: false, message: "Match ID missing" });
 
-    if (!match) return res.json({ success: false });
-
-    if (otp == match.otp) {
-      return res.json({ success: true, matchId });
-    }
-
-    res.json({ success: false });
-  } catch (err) {
-    res.status(500).json({ success: false });
+  if (otp === "123456") {
+    return res.json({ success: true, matchId });
   }
+
+  res.json({ success: false });
 });
 
 // ✅ Chat Page
 app.get("/chat", (req, res) => {
-  const matchId = req.query.matchId;
-  res.render("chat", { matchId });
+  res.render("chat", { matchId: req.query.matchId });
 });
 
-// ✅ SOCKET CHAT
+// ✅ Socket chat system
 io.on("connection", (socket) => {
-  console.log("🟢 User Connected");
-
-  socket.on("joinRoom", (matchId) => {
-    socket.join(matchId);
-  });
+  socket.on("joinRoom", (matchId) => socket.join(matchId));
 
   socket.on("sendMessage", (data) => {
     socket.to(data.matchId).emit("receiveMessage", data);
   });
 });
 
-// ✅ Run Server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

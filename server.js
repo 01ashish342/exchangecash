@@ -4,7 +4,7 @@ require("dotenv").config();
 const path = require("path");
 
 
-const userRequest = require("./models/UserRequest");
+const userRequest = require("./models/userRequest");
 const Match = require("./models/Match");
 
 const app = express();

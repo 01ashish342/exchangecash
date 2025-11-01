@@ -93,8 +93,10 @@ app.post("/submit", async (req, res) => {
 // ✅ Notify both users in real-time
 io.emit("matchFound", { matchId: newMatch._id });
 
-// ✅ Response to the user who submitted second
-res.json({ status: "matched", matchId: newMatch._id });
+if (data.status === "matched") {
+    window.location.href = `/verify?matchId=${data.matchId}`;
+}
+
 
   } catch (error) {
     console.log(" Error:", error);
@@ -102,24 +104,39 @@ res.json({ status: "matched", matchId: newMatch._id });
   }
 });
 
-
 app.get("/verify", (req, res) => {
-  res.render("verify");
+  const matchId = req.query.matchId;
+  res.render("verify", { matchId });
 });
 
+
+
 app.post("/verify-otp", (req, res) => {
-  const { otp } = req.body;
+  try {
+    const { otp, matchId } = req.body;
 
-  if (otp === "123456") {  // for testing, replace later with real generated OTP
-    return res.json({ success: true, matchId: "example123" });
+    if (!matchId) {
+      console.log("❌ matchId missing in POST request");
+      return res.status(400).json({ success: false, message: "Match ID missing" });
+    }
+
+    if (otp === "123456") {
+      return res.json({ success: true, matchId });
+    }
+
+    res.json({ success: false });
+
+  } catch (err) {
+    console.log("❌ OTP verify error: ", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
-
-  res.json({ success: false });
 });
 
 app.get("/chat", (req, res) => {
-  res.render("chat", { matchId: req.query.matchId });
+  const matchId = req.query.matchId;
+  res.render("chat", { matchId });
 });
+
 
 
 

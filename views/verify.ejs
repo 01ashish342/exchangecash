@@ -82,15 +82,21 @@
 <script>
 async function verifyOTP() {
     const otp = document.getElementById("otp").value;
-    const matchId = document.getElementById("matchId").value;
+    const matchId = document.getElementById("matchId").value; // ✅ get matchId
+
+    if (!otp || !matchId) {
+        alert("OTP or MatchId missing");
+        return;
+    }
 
     const res = await fetch("/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp, matchId })   // ✅ now sending matchId
+        body: JSON.stringify({ otp, matchId })   // ✅ send matchId also
     });
 
     const result = await res.json();
+
     const msgBox = document.getElementById("message");
 
     if (result.success) {
@@ -98,7 +104,7 @@ async function verifyOTP() {
         msgBox.className = "success";
 
         setTimeout(() => {
-            window.location.href = "/chat?matchId=" + result.matchId;
+            window.location.href = `/chat?matchId=${matchId}`;
         }, 1500);
 
     } else {

@@ -77,9 +77,9 @@ app.post("/submit", async (req, res) => {
       user1: newRequest._id,
       user2: matchedRequest._id,
     });
+await UserRequest.findByIdAndUpdate(newRequest._id, { matched: true }, { new: true });
+await UserRequest.findByIdAndUpdate(matchedRequest._id, { matched: true }, { new: true });
 
-    await UserRequest.findByIdAndUpdate(newRequest._id, { matched: true });
-    await UserRequest.findByIdAndUpdate(matchedRequest._id, { matched: true });
 
     console.log("✅ Match Created:", newMatch._id);
 

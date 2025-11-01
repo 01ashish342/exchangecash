@@ -117,6 +117,9 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
+
+
+
     let map = L.map("map").setView([20.5937, 78.9629], 5);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -126,7 +129,8 @@
     let userLat = null;
     let userLng = null;
 
-    // ✅ Get user location
+    
+    //  Get user location
     navigator.geolocation.getCurrentPosition(
         (pos) => {
             userLat = pos.coords.latitude;
@@ -134,13 +138,19 @@
 
             L.marker([userLat, userLng]).addTo(map).bindPopup("You are here.").openPopup();
             map.setView([userLat, userLng], 15);
+
+           
         },
         (err) => {
             alert("⚠️ Please allow location access.");
         }
+
+         
     );
 
-    // ✅ Handle form submit (AJAX)
+     
+
+    //  Handle form submit (AJAX)
     document.getElementById("exchangeForm").addEventListener("submit", async function(e) {
         e.preventDefault();
 
@@ -183,7 +193,7 @@
     const socket = io();
 
     socket.on("matchFound", (data) => {
-        alert("✅ Match Found! Redirecting to OTP page...");
+        alert(" Match Found! Redirecting to OTP page...");
         window.location.href = `/verify?matchId=${data.matchId}`;
     });
 </script>

@@ -79,10 +79,34 @@
     <div id="message"></div>
 </div>
 
+<div id="map" style="height: 400px;"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+    var user1Lat = <%= user1.location.coordinates[1] %>;
+    var user1Lng = <%= user1.location.coordinates[0] %>;
+    var user2Lat = <%= user2.location.coordinates[1] %>;
+    var user2Lng = <%= user2.location.coordinates[0] %>;
+
+    var map = L.map("map").setView([user1Lat, user1Lng], 14);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+    L.marker([user1Lat, user1Lng])
+      .addTo(map)
+      .bindPopup("📍 You");
+
+    L.marker([user2Lat, user2Lng])
+      .addTo(map)
+      .bindPopup("🤝 Matched User");
+</script>
+
+
 <script>
 async function verifyOTP() {
     const otp = document.getElementById("otp").value;
-    const matchId = document.getElementById("matchId").value; // ✅ get matchId
+    const matchId = document.getElementById("matchId").value; // get matchId
 
     if (!otp || !matchId) {
         alert("OTP or MatchId missing");
@@ -92,7 +116,7 @@ async function verifyOTP() {
     const res = await fetch("/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp, matchId })   // ✅ send matchId also
+        body: JSON.stringify({ otp, matchId })   // send matchId also
     });
 
     const result = await res.json();
@@ -100,7 +124,7 @@ async function verifyOTP() {
     const msgBox = document.getElementById("message");
 
     if (result.success) {
-        msgBox.innerHTML = "✅ OTP Verified! Connecting to chat...";
+        msgBox.innerHTML = " OTP Verified! Connecting to chat...";
         msgBox.className = "success";
 
         setTimeout(() => {
@@ -108,7 +132,7 @@ async function verifyOTP() {
         }, 1500);
 
     } else {
-        msgBox.innerHTML = "❌ Invalid OTP. Try again.";
+        msgBox.innerHTML = " Invalid OTP. Try again.";
         msgBox.className = "error";
     }
 }

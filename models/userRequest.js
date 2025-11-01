@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const userRequestSchema = new mongoose.Schema({
+const UserRequestSchema = new mongoose.Schema({
   mode: {
     type: String,
     enum: ["cashtoonline", "onlinetocash"],
@@ -41,6 +41,6 @@ const userRequestSchema = new mongoose.Schema({
 });
 
 // ✅ Required for geo indexing in MongoDB
-userRequestSchema.index({ location: "2dsphere" });
+UserRequestSchema.index({ location: "2dsphere" });
 
-module.exports = mongoose.model("UserRequest", userRequestSchema);
+module.exports = mongoose.model("UserRequest", UserRequestSchema);

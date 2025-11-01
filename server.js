@@ -95,20 +95,33 @@ app.post("/submit", async (req, res) => {
 });
 
 //  OTP Page
+//  OTP Page + send both user locations
 app.get("/verify", async (req, res) => {
-  const matchId = req.query.matchId;
+  try {
+    const matchId = req.query.matchId;
 
-  // get both users from match document
-  const match = await Match.findById(matchId)
-    .populate("user1")
-    .populate("user2");
+    const match = await Match.findById(matchId)
+      .populate("user1")
+      .populate("user2");
 
-  res.render("verify", {
-    matchId,
-    user1: match.user1,     // details of first user
-    user2: match.user2      // details of second user
-  });
+    if (!match) return res.send("Match not found");
+
+    res.render("verify", {
+      matchId,
+      user1: match.user1,
+      user2: match.user2,
+      user1Lat: match.user1.location.coordinates[1],
+      user1Lng: match.user1.location.coordinates[0],
+      user2Lat: match.user2.location.coordinates[1],
+      user2Lng: match.user2.location.coordinates[0]
+    });
+
+  } catch (error) {
+    console.log("⚠️ Error loading verify page:", error);
+    res.status(500).send("Server Error");
+  }
 });
+
 
 
 //  Verify OTP

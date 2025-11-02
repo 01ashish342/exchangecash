@@ -154,7 +154,8 @@
     document.getElementById("exchangeForm").addEventListener("submit", async function(e) {
         e.preventDefault();
 
-        const mode = document.getElementById("mode").value;
+        const mode = document.getElementById("mode").value.trim().toLowerCase();
+
         const amount = document.getElementById("amount").value;
         const phone = document.getElementById("phone").value;
 

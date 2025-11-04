@@ -140,6 +140,9 @@ app.post("/verify-otp", (req, res) => {
   res.json({ success: false });
 });
 
+
+
+
 //  Chat Page
 app.get("/chat", async (req, res) => {
   try {
@@ -169,13 +172,24 @@ app.get("/chat", async (req, res) => {
 
 
 //  Socket chat system
+// ✅ Socket.IO (single connection handler)
 io.on("connection", (socket) => {
-  socket.on("joinRoom", (matchId) => socket.join(matchId));
+  console.log("✅ User connected:", socket.id);
+
+  socket.on("joinRoom", (matchId) => {
+    socket.join(matchId);
+    console.log(`📌 User joined room: ${matchId}`);
+  });
+
+  socket.on("locationUpdate", ({ matchId, lat, lng }) => {
+    socket.to(matchId).emit("userMoved", { lat, lng });
+  });
 
   socket.on("sendMessage", (data) => {
     socket.to(data.matchId).emit("receiveMessage", data);
   });
 });
+
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(` Server running on port ${PORT}`));

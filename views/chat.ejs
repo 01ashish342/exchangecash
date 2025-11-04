@@ -93,29 +93,21 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
+    // Initial coordinates coming from backend
     var user1Lat = <%= user1.location.coordinates[1] %>;
     var user1Lng = <%= user1.location.coordinates[0] %>;
     var user2Lat = <%= user2.location.coordinates[1] %>;
     var user2Lng = <%= user2.location.coordinates[0] %>;
 
-    var map = L.map("map").setView([user1Lat, user1Lng], 15);
-
+    let map = L.map("map").setView([user1Lat, user1Lng], 15);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-    // ✅ Precise Marker
-    var userMarker = L.marker([user1Lat, user1Lng]).addTo(map).bindPopup("📍 You");
-    var matchedMarker = L.marker([user2Lat, user2Lng]).addTo(map).bindPopup("🤝 Matched User");
+    // MARKERS
+    let userMarker = L.marker([user1Lat, user1Lng]).addTo(map).bindPopup("📍 You");
+    let matchedMarker = L.marker([user2Lat, user2Lng]).addTo(map).bindPopup("🤝 Matched User");
 
-    // ✅ Blue circle showing location accuracy (10 meters)
-    L.circle([user1Lat, user1Lng], {
-        radius: 10,
-        color: "blue",
-        fillColor: "#90c3ff",
-        fillOpacity: 0.3
-    }).addTo(map);
-
-    // ✅ Draw line between both users
-    var line = L.polyline(
+    // LINE BETWEEN USERS
+    let line = L.polyline(
         [
             [user1Lat, user1Lng],
             [user2Lat, user2Lng]
@@ -123,18 +115,53 @@ document.addEventListener("DOMContentLoaded", () => {
         { color: "red", weight: 4 }
     ).addTo(map);
 
-    // ✅ Auto zoom to fit both markers
+    // FIT MAP TO SEE BOTH
     map.fitBounds(line.getBounds(), { padding: [50, 50] });
 
-    // ✅ Calculate distance (in meters)
-    var distance = map.distance([user1Lat, user1Lng], [user2Lat, user2Lng]);
+    // DISTANCE
+    function updateDistance() {
+        let distance = map.distance(userMarker.getLatLng(), matchedMarker.getLatLng());
+        userMarker.bindPopup(`📍 You<br>Distance: ${(distance / 1000).toFixed(2)} km`);
+        matchedMarker.bindPopup(`🤝 Matched User<br>Distance: ${(distance / 1000).toFixed(2)} km`);
+    }
 
-    // ✅ Show distance in popup
-    userMarker.bindPopup(`📍 You<br>Distance to user: ${(distance / 1000).toFixed(2)} km`).openPopup();
-    matchedMarker.bindPopup(`🤝 Matched User<br>Distance: ${(distance / 1000).toFixed(2)} km`);
+    updateDistance(); // initial distance
+
+    // ✅ SOCKET.IO HANDLING
+    const socket = io();
+    const urlParams = new URLSearchParams(window.location.search);
+    const matchId = urlParams.get("matchId");
+
+    socket.emit("joinRoom", matchId);
+
+    // ✅ Update matched user's location when they move
+    socket.on("userMoved", ({ lat, lng }) => {
+        matchedMarker.setLatLng([lat, lng]);
+        line.setLatLngs([userMarker.getLatLng(), [lat, lng]]);
+        updateDistance();
+    });
+
+    // ✅ Track YOUR real-time location
+    navigator.geolocation.watchPosition(
+        (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+
+            // move your marker + update line + distance
+            userMarker.setLatLng([lat, lng]);
+            line.setLatLngs([[lat, lng], matchedMarker.getLatLng()]);
+            updateDistance();
+
+            // send your live location to matched user
+            socket.emit("locationUpdate", { matchId, lat, lng });
+        },
+        (err) => console.log("GPS error:", err),
+        { enableHighAccuracy: true }
+    );
 
 });
 </script>
+
 
 
 <script src="/socket.io/socket.io.js"></script>

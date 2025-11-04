@@ -102,10 +102,10 @@
         </select>
 
         <span>Rupees</span>
-        <input type="number" name="amount" id="amount" placeholder="Enter your amount">
+        <input type="number" name="amount" id="amount" placeholder="Enter your amount" required>
 
         <span>Phone number</span>
-        <input type="tel" name="phone" id="phone" placeholder="Your phone number">
+        <input type="tel" name="phone" id="phone" placeholder="Your phone number" required>
 
         <button type="submit">Submit</button>
 
@@ -113,18 +113,18 @@
         <input type="hidden" id="lng" name="lng">
     </form>
 
-    <div id="map"></div>
+    <!-- <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> -->
 <script>
 
 
 
-    let map = L.map("map").setView([20.5937, 78.9629], 5);
+    // let map = L.map("map").setView([20.5937, 78.9629], 5);
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-    }).addTo(map);
+    // L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    //     maxZoom: 19,
+    // }).addTo(map);
 
     let userLat = null;
     let userLng = null;
@@ -136,8 +136,8 @@
             userLat = pos.coords.latitude;
             userLng = pos.coords.longitude;
 
-            L.marker([userLat, userLng]).addTo(map).bindPopup("You are here.").openPopup();
-            map.setView([userLat, userLng], 15);
+            // L.marker([userLat, userLng]).addTo(map).bindPopup("You are here.").openPopup();
+            // map.setView([userLat, userLng], 15);
 
            
         },

@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
     <style>
         body {
@@ -84,9 +87,58 @@
     </div>
 
 </div>
+<div id="map" style="height: 400px;"></div>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    var user1Lat = <%= user1.location.coordinates[1] %>;
+    var user1Lng = <%= user1.location.coordinates[0] %>;
+    var user2Lat = <%= user2.location.coordinates[1] %>;
+    var user2Lng = <%= user2.location.coordinates[0] %>;
+
+    var map = L.map("map").setView([user1Lat, user1Lng], 15);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+    // ✅ Precise Marker
+    var userMarker = L.marker([user1Lat, user1Lng]).addTo(map).bindPopup("📍 You");
+    var matchedMarker = L.marker([user2Lat, user2Lng]).addTo(map).bindPopup("🤝 Matched User");
+
+    // ✅ Blue circle showing location accuracy (10 meters)
+    L.circle([user1Lat, user1Lng], {
+        radius: 10,
+        color: "blue",
+        fillColor: "#90c3ff",
+        fillOpacity: 0.3
+    }).addTo(map);
+
+    // ✅ Draw line between both users
+    var line = L.polyline(
+        [
+            [user1Lat, user1Lng],
+            [user2Lat, user2Lng]
+        ],
+        { color: "red", weight: 4 }
+    ).addTo(map);
+
+    // ✅ Auto zoom to fit both markers
+    map.fitBounds(line.getBounds(), { padding: [50, 50] });
+
+    // ✅ Calculate distance (in meters)
+    var distance = map.distance([user1Lat, user1Lng], [user2Lat, user2Lng]);
+
+    // ✅ Show distance in popup
+    userMarker.bindPopup(`📍 You<br>Distance to user: ${(distance / 1000).toFixed(2)} km`).openPopup();
+    matchedMarker.bindPopup(`🤝 Matched User<br>Distance: ${(distance / 1000).toFixed(2)} km`);
+
+});
+</script>
 
 
 <script src="/socket.io/socket.io.js"></script>
+
 
 <script>
     const socket = io();

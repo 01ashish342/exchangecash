@@ -142,75 +142,6 @@
 
 
 <!-- JS -->
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-<script src="/socket.io/socket.io.js"></script>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-
-    var user1Lat = <%= user1.location.coordinates[1] %>;
-    var user1Lng = <%= user1.location.coordinates[0] %>;
-    var user2Lat = <%= user2.location.coordinates[1] %>;
-    var user2Lng = <%= user2.location.coordinates[0] %>;
-
-    let map = L.map("map").setView([user1Lat, user1Lng], 14);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-
-    let userMarker = L.marker([user1Lat, user1Lng]).addTo(map).bindPopup("📍 You");
-    let matchedMarker = L.marker([user2Lat, user2Lng]).addTo(map).bindPopup("🤝 Matched User");
-
-    // Routing line
-    let routeControl = L.Routing.control({
-        waypoints: [
-            L.latLng(user1Lat, user1Lng),
-            L.latLng(user2Lat, user2Lng)
-        ],
-        lineOptions: {
-            addWaypoints: false,
-            styles: [{ color: "#007aff", weight: 4 }]
-        },
-        createMarker: () => null
-    }).addTo(map);
-
-    function updateDistance() {
-        let distance = map.distance(userMarker.getLatLng(), matchedMarker.getLatLng());
-        userMarker.bindPopup(`📍 You<br>Distance: ${(distance / 1000).toFixed(2)} km`).openPopup();
-        matchedMarker.bindPopup(`🤝 Matched User<br>Distance: ${(distance / 1000).toFixed(2)} km`);
-    }
-
-    updateDistance();
-
-    // ✅ SOCKET
-    const socket = io();
-    const urlParams = new URLSearchParams(window.location.search);
-    const matchId = urlParams.get("matchId");
-
-    socket.emit("joinRoom", matchId);
-
-    socket.on("userMoved", ({ lat, lng }) => {
-        matchedMarker.setLatLng([lat, lng]);
-        routeControl.setWaypoints([ userMarker.getLatLng(), matchedMarker.getLatLng() ]);
-        updateDistance();
-    });
-
-    navigator.geolocation.watchPosition(
-        (pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-
-            userMarker.setLatLng([lat, lng]);
-            routeControl.setWaypoints([ userMarker.getLatLng(), matchedMarker.getLatLng() ]);
-            updateDistance();
-
-            socket.emit("locationUpdate", { matchId, lat, lng });
-        },
-        (err) => console.log("GPS error:", err),
-        { enableHighAccuracy: true }
-    );
-
-});
-</script>
 
 
 <script>
@@ -235,7 +166,104 @@ function appendMessage(msg, isMine) {
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
 }
+</script><!-- JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+let socket;   // ✅ make global
+let matchId;  // ✅ make global
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    var user1Lat = <%= user1.location.coordinates[1] %>;
+    var user1Lng = <%= user1.location.coordinates[0] %>;
+    var user2Lat = <%= user2.location.coordinates[1] %>;
+    var user2Lng = <%= user2.location.coordinates[0] %>;
+
+    let map = L.map("map").setView([user1Lat, user1Lng], 14);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+    let userMarker = L.marker([user1Lat, user1Lng]).addTo(map).bindPopup("📍 You");
+    let matchedMarker = L.marker([user2Lat, user2Lng]).addTo(map).bindPopup("🤝 Matched User");
+
+    let routeControl = L.Routing.control({
+        waypoints: [
+            L.latLng(user1Lat, user1Lng),
+            L.latLng(user2Lat, user2Lng)
+        ],
+        lineOptions: {
+            addWaypoints: false,
+            styles: [{ color: "#007aff", weight: 4 }]
+        },
+        createMarker: () => null
+    }).addTo(map);
+
+    function updateDistance() {
+        let distance = map.distance(userMarker.getLatLng(), matchedMarker.getLatLng());
+        userMarker.bindPopup(`📍 You<br>Distance: ${(distance / 1000).toFixed(2)} km`).openPopup();
+        matchedMarker.bindPopup(`🤝 Matched User<br>Distance: ${(distance / 1000).toFixed(2)} km`);
+    }
+    updateDistance();
+
+    // ✅ SOCKET IS INITIALIZED HERE
+    socket = io();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    matchId = urlParams.get("matchId");
+
+    socket.emit("joinRoom", matchId);
+
+    socket.on("userMoved", ({ lat, lng }) => {
+        matchedMarker.setLatLng([lat, lng]);
+        routeControl.setWaypoints([userMarker.getLatLng(), matchedMarker.getLatLng()]);
+        updateDistance();
+    });
+
+    navigator.geolocation.watchPosition(
+        (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+
+            userMarker.setLatLng([lat, lng]);
+            routeControl.setWaypoints([userMarker.getLatLng(), matchedMarker.getLatLng()]);
+            updateDistance();
+
+            socket.emit("locationUpdate", { matchId, lat, lng });
+        },
+        (err) => console.log("GPS error:", err),
+        { enableHighAccuracy: true }
+    );
+
+});
 </script>
+
+<!-- ✅ MESSAGE SENDING FIXED -->
+<script>
+function sendMessage() {
+    const msg = document.getElementById("msgInput").value;
+    if (!msg) return;
+
+    socket.emit("sendMessage", { matchId, message: msg });
+    appendMessage(msg, true);
+    document.getElementById("msgInput").value = "";
+}
+
+socket?.on("receiveMessage", (data) => {
+    appendMessage(data.message, false);
+});
+
+function appendMessage(msg, isMine) {
+    const container = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.classList.add("msg", isMine ? "right" : "left");
+    div.innerText = msg;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+</script>
+
 
 </body>
 </html>

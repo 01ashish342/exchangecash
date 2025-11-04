@@ -63,7 +63,7 @@ app.post("/submit", async (req, res) => {
             type: "Point",
             coordinates: newRequest.location.coordinates,
           },
-          $maxDistance: 3000, // 3 km
+          $maxDistance: 3000000, // 3 km
         },
       },
     });

@@ -177,18 +177,22 @@ io.on("connection", (socket) => {
   console.log("✅ User connected:", socket.id);
 
   socket.on("joinRoom", (matchId) => {
-    socket.join(matchId);
+    socket.join(String(matchId));
     console.log(`📌 User joined room: ${matchId}`);
   });
 
   socket.on("locationUpdate", ({ matchId, lat, lng }) => {
-    socket.to(matchId).emit("userMoved", { lat, lng });
+    socket.to(String(matchId)).emit("userMoved", { lat, lng });
   });
 
-  socket.on("sendMessage", (data) => {
-    socket.to(data.matchId).emit("receiveMessage", data);
+  socket.on("sendMessage", ({ matchId, message, sender }) => {
+    socket.to(String(matchId)).emit("receiveMessage", {
+      message,
+      sender
+    });
   });
 });
+
 
 
 const PORT = process.env.PORT || 3000;

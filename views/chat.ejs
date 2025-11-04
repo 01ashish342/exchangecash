@@ -175,7 +175,12 @@ function sendMessage() {
     const msg = document.getElementById("msgInput").value;
     if (!msg) return;
 
-    socket.emit("sendMessage", { matchId, message: msg });
+    socket.emit("sendMessage", {
+    matchId: String(matchId), // ensure string
+    message: msg,
+    sender: socket.id         // attach sender
+});
+
     appendMessage(msg, true);
     document.getElementById("msgInput").value = "";
 }

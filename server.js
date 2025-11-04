@@ -96,31 +96,16 @@ await UserRequest.findByIdAndUpdate(matchedRequest._id, { matched: true }, { new
 
 //  OTP Page
 //  OTP Page + send both user locations
-app.get("/verify", async (req, res) => {
-  try {
-    const matchId = req.query.matchId;
-
-    const match = await Match.findById(matchId)
-      .populate("user1")
-      .populate("user2");
-
-    if (!match) return res.send("Match not found");
-
-    res.render("verify", {
-      matchId,
-      user1: match.user1,
-      user2: match.user2,
-      user1Lat: match.user1.location.coordinates[1],
-      user1Lng: match.user1.location.coordinates[0],
-      user2Lat: match.user2.location.coordinates[1],
-      user2Lng: match.user2.location.coordinates[0]
-    });
-
-  } catch (error) {
-    console.log("⚠️ Error loading verify page:", error);
-    res.status(500).send("Server Error");
-  }
+app.get("/verify",  (req, res) => {
+  res.render("verify");
 });
+   
+   
+    
+
+  
+  
+
 
 
 
@@ -138,8 +123,31 @@ app.post("/verify-otp", (req, res) => {
 });
 
 //  Chat Page
-app.get("/chat", (req, res) => {
-  res.render("chat", { matchId: req.query.matchId });
+app.get("/chat", async (req, res) => { try {
+    const matchId = req.query.matchId;
+
+    const match = await Match.findById(matchId)
+      .populate("user1")
+      .populate("user2");
+
+    if (!match) return res.send("Match not found");
+
+  res.render("chat", { 
+    
+     matchId: req.query.matchId,
+      user1: match.user1,
+      user2: match.user2,
+      user1Lat: match.user1.location.coordinates[1],
+      user1Lng: match.user1.location.coordinates[0],
+      user2Lat: match.user2.location.coordinates[1],
+      user2Lng: match.user2.location.coordinates[0]
+   });
+
+
+  } catch (error) {
+    console.log("⚠️ Error loading verify page:", error);
+    res.status(500).send("Server Error");
+  }
 });
 
 //  Socket chat system

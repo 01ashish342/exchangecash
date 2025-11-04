@@ -96,16 +96,18 @@ await UserRequest.findByIdAndUpdate(matchedRequest._id, { matched: true }, { new
 
 //  OTP Page
 //  OTP Page + send both user locations
-app.get("/verify",  (req, res) => {
-  res.render("verify");
+app.get("/verify", async (req, res) => {
+ 
+    const matchId = req.query.matchId;
+
+   
+    res.render("verify", {
+      matchId,
+   
+    });
+
+  
 });
-   
-   
-    
-
-  
-  
-
 
 
 

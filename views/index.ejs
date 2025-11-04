@@ -6,156 +6,162 @@
     <title>CASH APP</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
+    <!-- ✅ Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(120deg, #0078ff, #00c6ff);
+            font-family: "Poppins", sans-serif;
             margin: 0;
             padding: 0;
-            color: white;
-            text-align: center;
+            color: #fff;
+            background: linear-gradient(135deg, #0078ff, #00d4ff);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.6s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         h2 {
-            margin-top: 30px;
-            font-size: 32px;
-            font-weight: bold;
+            font-size: 34px;
+            font-weight: 700;
+            color: white;
+            margin-top: 28px;
+            text-shadow: 0px 4px 10px rgba(0,0,0,0.25);
         }
 
         p {
-            width: 80%;
-            margin: auto;
-            font-size: 18px;
+            text-align: center;
+            font-size: 15px;
             opacity: 0.9;
+            margin: 5px 20px 10px;
+            line-height: 1.5;
         }
 
-        form {
-            background: white;
-            width: 380px;
-            margin: 30px auto;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0px 0px 20px rgba(0,0,0,0.2);
+        .container {
+            width: 90%;
+            max-width: 430px;
+            background: #ffffff;
+            border-radius: 15px;
+            margin-top: 25px;
+            padding: 28px;
             color: #333;
-            text-align: left;
+            box-shadow: 0px 8px 25px rgba(0,0,0,0.20);
         }
 
-        form span {
-            font-size: 14px;
+        label {
+            font-weight: 600;
+            font-size: 15px;
             display: block;
-            margin-top: 10px;
-            font-weight: bold;
+            margin-top: 12px;
         }
 
         select,
         input {
             width: 100%;
-            padding: 10px;
+            padding: 14px;
             margin-top: 6px;
+            border-radius: 10px;
             border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
+            font-size: 16px;
+            outline: none;
+            box-sizing: border-box;
         }
 
         button {
             width: 100%;
-            background: #007bff;
-            color: white;
+            padding: 14px;
+            margin-top: 22px;
+            font-size: 18px;
             border: none;
-            padding: 12px;
-            font-size: 16px;
-            border-radius: 6px;
-            margin-top: 18px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #006eff, #00bbff);
+            color: white;
             cursor: pointer;
-            transition: 0.3s;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
 
         button:hover {
-            background: #0056b3;
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #0057dd, #009bde);
+            box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
         }
 
-        #map {
-            height: 350px;
-            width: 80%;
-            border-radius: 10px;
-            margin: 40px auto;
-            border: 3px solid rgba(255, 255, 255, 0.5);
+        /* ✅ Mobile Optimization */
+        @media (max-width: 480px) {
+            h2 {
+                font-size: 28px;
+                margin-top: 18px;
+            }
+
+            .container {
+                padding: 22px;
+                margin-top: 18px;
+                border-radius: 12px;
+            }
+
+            select,
+            input,
+            button {
+                font-size: 15px;
+                padding: 12px;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <h2>Welcome to our Cash App!</h2>
-    <p>
-        HERE, you can exchange cash if you need online and online if you need cash.  
-        Just select your mode → enter amount → allow location → we match you with nearby user.  
-        <br><br><b>Thank you for using our service!</b>
-    </p>
+    <h2>CASH APP</h2>
+    <p>Exchange Cash ↔ Online with the nearest trusted user.</p>
 
-    <form id="exchangeForm">
+    <div class="container">
+        <form id="exchangeForm">
+            <label>Select Mode</label>
+            <select name="mode" id="mode">
+                <option value="cashtoonline">Cash ➝ Online</option>
+                <option value="onlinetocash">Online ➝ Cash</option>
+            </select>
 
-        <span>Select your mode</span>
-        <select name="mode" id="mode">
-            <option value="cashtoonline">Cash ➝ Online</option>
-            <option value="onlinetocash">Online ➝ Cash</option>
-        </select>
+            <label>Amount (₹)</label>
+            <input type="number" name="amount" id="amount" placeholder="Enter amount" required>
 
-        <span>Rupees</span>
-        <input type="number" name="amount" id="amount" placeholder="Enter your amount" required>
+            <label>Phone Number</label>
+            <input type="tel" name="phone" id="phone" placeholder="Enter your phone number" required>
 
-        <span>Phone number</span>
-        <input type="tel" name="phone" id="phone" placeholder="Your phone number" required>
+            <button type="submit">Find Match</button>
 
-        <button type="submit">Submit</button>
+            <input type="hidden" id="lat" name="lat">
+            <input type="hidden" id="lng" name="lng">
+        </form>
+    </div>
 
-        <input type="hidden" id="lat" name="lat">
-        <input type="hidden" id="lng" name="lng">
-    </form>
 
-    <!-- <div id="map"></div>
-
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> -->
 <script>
-
-
-
-    // let map = L.map("map").setView([20.5937, 78.9629], 5);
-
-    // L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    //     maxZoom: 19,
-    // }).addTo(map);
-
     let userLat = null;
     let userLng = null;
 
-    
-    //  Get user location
     navigator.geolocation.getCurrentPosition(
         (pos) => {
             userLat = pos.coords.latitude;
             userLng = pos.coords.longitude;
-
-            // L.marker([userLat, userLng]).addTo(map).bindPopup("You are here.").openPopup();
-            // map.setView([userLat, userLng], 15);
-
-           
         },
-        (err) => {
+        () => {
             alert("⚠️ Please allow location access.");
         }
-
-         
     );
 
-     
-
-    //  Handle form submit (AJAX)
     document.getElementById("exchangeForm").addEventListener("submit", async function(e) {
         e.preventDefault();
 
-        const mode = document.getElementById("mode").value.trim().toLowerCase();
-
+        const mode = document.getElementById("mode").value;
         const amount = document.getElementById("amount").value;
         const phone = document.getElementById("phone").value;
 
@@ -169,21 +175,20 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 mode, amount, phone,
-                lat: userLat,
-                lng: userLng
+                lat: userLat, lng: userLng
             })
         });
 
         const result = await response.json();
 
         if (result.status === "searching") {
-            alert("Searching for nearby users...");
-        } 
+            alert("⏳ Searching for nearby users...");
+        }
         else if (result.status === "matched") {
             window.location.href = `/verify?matchId=${result.matchId}`;
-        } 
+        }
         else {
-            alert("Server Error, try again.");
+            alert("❌ Server Error, try again.");
         }
     });
 </script>
@@ -194,7 +199,7 @@
     const socket = io();
 
     socket.on("matchFound", (data) => {
-        alert(" Match Found! Redirecting to OTP page...");
+        alert("✅ Match Found! Redirecting...");
         window.location.href = `/verify?matchId=${data.matchId}`;
     });
 </script>

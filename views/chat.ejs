@@ -3,102 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat + Live Tracking</title>
+    <title>Live Chat & Tracking</title>
 
-    <!-- Leaflet CSS -->
+    <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
     <!-- Leaflet Routing -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #eef2f3;
-            margin: 0;
+        * {
+            box-sizing: border-box;
         }
 
+        body {
+            margin: 0;
+            background: #f2f4f7;
+            font-family: "Poppins", sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Chat section */
         #chat-container {
-            max-width: 480px;
-            margin: auto;
-            height: 60vh;
+            flex: 1;
             display: flex;
             flex-direction: column;
             background: white;
+            border-radius: 0 0 25px 25px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
 
         #messages {
             flex: 1;
-            padding: 15px;
+            padding: 12px;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
         .msg {
-            background: #007aff;
-            color: white;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            width: fit-content;
-            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 20px;
+            font-size: 15px;
+            max-width: 75%;
+            word-wrap: break-word;
+            animation: fadeIn .3s ease-in-out;
         }
 
         .right {
-            background: #e0e0e0;
-            color: black;
             align-self: flex-end;
+            background: #007aff;
+            color: white;
         }
 
+        .left {
+            background: #e8e8e8;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Input box */
         #input-box {
             display: flex;
             padding: 10px;
-            border-top: 1px solid #ccc;
+            background: #fafafa;
+            border-top: 1px solid #ddd;
+            align-items: center;
         }
 
         input {
             flex: 1;
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid gray;
+            padding: 12px 14px;
             font-size: 16px;
+            border-radius: 25px;
+            border: 1px solid #ccc;
+            background: #fff;
+            outline: none;
         }
 
         button {
-            padding: 12px;
-            margin-left: 10px;
+            margin-left: 8px;
+            padding: 10px 18px;
             background: #007aff;
-            color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 25px;
+            font-size: 15px;
+            color: white;
             cursor: pointer;
+            transition: 0.2s;
         }
 
+        button:hover {
+            background: #005fcc;
+        }
+
+        /* Map */
         #map {
             height: 40vh;
+            width: 100%;
         }
+
+        /* Mobile friendly */
+        @media (max-width: 480px) {
+            #chat-container {
+                border-radius: 0 0 20px 20px;
+            }
+
+            .msg {
+                font-size: 14px;
+            }
+
+            input {
+                font-size: 14px;
+            }
+        }
+
     </style>
 </head>
 <body>
 
 <div id="chat-container">
     <div id="messages"></div>
+
     <div id="input-box">
-        <input id="msgInput" type="text" placeholder="Type your message...">
+        <input id="msgInput" type="text" placeholder="Type message...">
         <button onclick="sendMessage()">Send</button>
     </div>
 </div>
 
 <div id="map"></div>
 
-<!-- Leaflet JS -->
+
+<!-- JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<!-- SOCKET -->
-<script src="/socket.io/socket.io.js"></script>
-
-<!-- Leaflet Routing (for road route line) -->
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-
+<script src="/socket.io/socket.io.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -111,23 +157,22 @@ document.addEventListener("DOMContentLoaded", () => {
     let map = L.map("map").setView([user1Lat, user1Lng], 14);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-    // MARKERS
     let userMarker = L.marker([user1Lat, user1Lng]).addTo(map).bindPopup("📍 You");
     let matchedMarker = L.marker([user2Lat, user2Lng]).addTo(map).bindPopup("🤝 Matched User");
 
-    // ✅ Routing Machine (road route)
+    // Routing line
     let routeControl = L.Routing.control({
         waypoints: [
             L.latLng(user1Lat, user1Lng),
             L.latLng(user2Lat, user2Lng)
         ],
         lineOptions: {
-            addWaypoints: false
+            addWaypoints: false,
+            styles: [{ color: "#007aff", weight: 4 }]
         },
         createMarker: () => null
     }).addTo(map);
 
-    // ✅ Live distance popup
     function updateDistance() {
         let distance = map.distance(userMarker.getLatLng(), matchedMarker.getLatLng());
         userMarker.bindPopup(`📍 You<br>Distance: ${(distance / 1000).toFixed(2)} km`).openPopup();
@@ -136,38 +181,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateDistance();
 
-    // ✅ Socket.io
+    // ✅ SOCKET
     const socket = io();
     const urlParams = new URLSearchParams(window.location.search);
     const matchId = urlParams.get("matchId");
 
     socket.emit("joinRoom", matchId);
 
-    // When other user moves
     socket.on("userMoved", ({ lat, lng }) => {
         matchedMarker.setLatLng([lat, lng]);
-
-        routeControl.setWaypoints([
-            userMarker.getLatLng(),
-            matchedMarker.getLatLng()
-        ]);
-
+        routeControl.setWaypoints([ userMarker.getLatLng(), matchedMarker.getLatLng() ]);
         updateDistance();
     });
 
-    // When YOU move
     navigator.geolocation.watchPosition(
         (pos) => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
 
             userMarker.setLatLng([lat, lng]);
-
-            routeControl.setWaypoints([
-                userMarker.getLatLng(),
-                matchedMarker.getLatLng()
-            ]);
-
+            routeControl.setWaypoints([ userMarker.getLatLng(), matchedMarker.getLatLng() ]);
             updateDistance();
 
             socket.emit("locationUpdate", { matchId, lat, lng });
@@ -181,37 +214,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 <script>
-    const socket = io();
+function sendMessage() {
+    const msg = document.getElementById("msgInput").value;
+    if (!msg) return;
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const matchId = urlParams.get("matchId");
+    socket.emit("sendMessage", { matchId, message: msg });
+    appendMessage(msg, true);
+    document.getElementById("msgInput").value = "";
+}
 
-    socket.emit("joinRoom", matchId);
+socket.on("receiveMessage", (data) => {
+    appendMessage(data.message, false);
+});
 
-    function sendMessage() {
-        const msg = document.getElementById("msgInput").value;
-        if (!msg) return;
-
-        socket.emit("sendMessage", { matchId, message: msg });
-        appendMessage(msg, true);
-        document.getElementById("msgInput").value = "";
-    }
-
-    socket.on("receiveMessage", (data) => {
-        appendMessage(data.message, false);
-    });
-
-    function appendMessage(msg, isMine) {
-        const container = document.getElementById("messages");
-        const div = document.createElement("div");
-
-        div.classList.add("msg");
-        if (isMine) div.classList.add("right");
-
-        div.innerText = msg;
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
-    }
+function appendMessage(msg, isMine) {
+    const container = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.classList.add("msg", isMine ? "right" : "left");
+    div.innerText = msg;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
 </script>
 
 </body>

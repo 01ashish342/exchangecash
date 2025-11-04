@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat</title>
+    <title>Chat + Live Tracking</title>
+
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet Routing -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 
     <style>
         body {
@@ -18,7 +21,7 @@
         #chat-container {
             max-width: 480px;
             margin: auto;
-            height: 100vh;
+            height: 60vh;
             display: flex;
             flex-direction: column;
             background: white;
@@ -70,89 +73,103 @@
             cursor: pointer;
         }
 
-        button:hover {
-            background: #0057c2;
+        #map {
+            height: 40vh;
         }
     </style>
 </head>
 <body>
 
 <div id="chat-container">
-    
     <div id="messages"></div>
-
     <div id="input-box">
         <input id="msgInput" type="text" placeholder="Type your message...">
         <button onclick="sendMessage()">Send</button>
     </div>
-
 </div>
-<div id="map" style="height: 400px;"></div>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<!-- SOCKET -->
+<script src="/socket.io/socket.io.js"></script>
+
+<!-- Leaflet Routing (for road route line) -->
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-    // Initial coordinates coming from backend
     var user1Lat = <%= user1.location.coordinates[1] %>;
     var user1Lng = <%= user1.location.coordinates[0] %>;
     var user2Lat = <%= user2.location.coordinates[1] %>;
     var user2Lng = <%= user2.location.coordinates[0] %>;
 
-    let map = L.map("map").setView([user1Lat, user1Lng], 15);
+    let map = L.map("map").setView([user1Lat, user1Lng], 14);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
     // MARKERS
     let userMarker = L.marker([user1Lat, user1Lng]).addTo(map).bindPopup("📍 You");
     let matchedMarker = L.marker([user2Lat, user2Lng]).addTo(map).bindPopup("🤝 Matched User");
 
-    // LINE BETWEEN USERS
-    let line = L.polyline(
-        [
-            [user1Lat, user1Lng],
-            [user2Lat, user2Lng]
+    // ✅ Routing Machine (road route)
+    let routeControl = L.Routing.control({
+        waypoints: [
+            L.latLng(user1Lat, user1Lng),
+            L.latLng(user2Lat, user2Lng)
         ],
-        { color: "red", weight: 4 }
-    ).addTo(map);
+        lineOptions: {
+            addWaypoints: false
+        },
+        createMarker: () => null
+    }).addTo(map);
 
-    // FIT MAP TO SEE BOTH
-    map.fitBounds(line.getBounds(), { padding: [50, 50] });
-
-    // DISTANCE
+    // ✅ Live distance popup
     function updateDistance() {
         let distance = map.distance(userMarker.getLatLng(), matchedMarker.getLatLng());
-        userMarker.bindPopup(`📍 You<br>Distance: ${(distance / 1000).toFixed(2)} km`);
+        userMarker.bindPopup(`📍 You<br>Distance: ${(distance / 1000).toFixed(2)} km`).openPopup();
         matchedMarker.bindPopup(`🤝 Matched User<br>Distance: ${(distance / 1000).toFixed(2)} km`);
     }
 
-    updateDistance(); // initial distance
+    updateDistance();
 
-    // ✅ SOCKET.IO HANDLING
-    const socket = io.connect();
+    // ✅ Socket.io
+    const socket = io();
     const urlParams = new URLSearchParams(window.location.search);
     const matchId = urlParams.get("matchId");
 
     socket.emit("joinRoom", matchId);
 
-    // ✅ Update matched user's location when they move
+    // When other user moves
     socket.on("userMoved", ({ lat, lng }) => {
         matchedMarker.setLatLng([lat, lng]);
-        line.setLatLngs([userMarker.getLatLng(), [lat, lng]]);
+
+        routeControl.setWaypoints([
+            userMarker.getLatLng(),
+            matchedMarker.getLatLng()
+        ]);
+
         updateDistance();
     });
 
-    // ✅ Track YOUR real-time location
+    // When YOU move
     navigator.geolocation.watchPosition(
         (pos) => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
 
-            // move your marker + update line + distance
             userMarker.setLatLng([lat, lng]);
-            line.setLatLngs([[lat, lng], matchedMarker.getLatLng()]);
+
+            routeControl.setWaypoints([
+                userMarker.getLatLng(),
+                matchedMarker.getLatLng()
+            ]);
+
             updateDistance();
 
-            // send your live location to matched user
             socket.emit("locationUpdate", { matchId, lat, lng });
         },
         (err) => console.log("GPS error:", err),
@@ -161,10 +178,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 </script>
-
-
-
-<script src="/socket.io/socket.io.js"></script>
 
 
 <script>
@@ -180,7 +193,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!msg) return;
 
         socket.emit("sendMessage", { matchId, message: msg });
-
         appendMessage(msg, true);
         document.getElementById("msgInput").value = "";
     }
@@ -190,15 +202,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function appendMessage(msg, isMine) {
-        const messageBox = document.getElementById("messages");
+        const container = document.getElementById("messages");
         const div = document.createElement("div");
 
         div.classList.add("msg");
         if (isMine) div.classList.add("right");
 
         div.innerText = msg;
-        messageBox.appendChild(div);
-        messageBox.scrollTop = messageBox.scrollHeight;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
     }
 </script>
 

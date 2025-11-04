@@ -5,16 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Chat & Tracking</title>
 
-    <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-
-    <!-- Leaflet Routing -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -25,7 +20,6 @@
             height: 100vh;
         }
 
-        /* Chat section */
         #chat-container {
             flex: 1;
             display: flex;
@@ -54,22 +48,14 @@
             animation: fadeIn .3s ease-in-out;
         }
 
-        .right {
-            align-self: flex-end;
-            background: #007aff;
-            color: white;
-        }
-
-        .left {
-            background: #e8e8e8;
-        }
+        .right { align-self: flex-end; background: #007aff; color: white; }
+        .left { background: #e8e8e8; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(5px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Input box */
         #input-box {
             display: flex;
             padding: 10px;
@@ -100,31 +86,12 @@
             transition: 0.2s;
         }
 
-        button:hover {
-            background: #005fcc;
-        }
+        button:hover { background: #005fcc; }
 
-        /* Map */
         #map {
             height: 40vh;
             width: 100%;
         }
-
-        /* Mobile friendly */
-        @media (max-width: 480px) {
-            #chat-container {
-                border-radius: 0 0 20px 20px;
-            }
-
-            .msg {
-                font-size: 14px;
-            }
-
-            input {
-                font-size: 14px;
-            }
-        }
-
     </style>
 </head>
 <body>
@@ -140,40 +107,14 @@
 
 <div id="map"></div>
 
-
 <!-- JS -->
-
-
-<script>
-function sendMessage() {
-    const msg = document.getElementById("msgInput").value;
-    if (!msg) return;
-
-    socket.emit("sendMessage", { matchId, message: msg });
-    appendMessage(msg, true);
-    document.getElementById("msgInput").value = "";
-}
-
-socket.on("receiveMessage", (data) => {
-    appendMessage(data.message, false);
-});
-
-function appendMessage(msg, isMine) {
-    const container = document.getElementById("messages");
-    const div = document.createElement("div");
-    div.classList.add("msg", isMine ? "right" : "left");
-    div.innerText = msg;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-}
-</script><!-- JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 
 <script>
-let socket;   // ✅ make global
-let matchId;  // ✅ make global
+let socket;
+let matchId;
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -189,14 +130,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let matchedMarker = L.marker([user2Lat, user2Lng]).addTo(map).bindPopup("🤝 Matched User");
 
     let routeControl = L.Routing.control({
-        waypoints: [
-            L.latLng(user1Lat, user1Lng),
-            L.latLng(user2Lat, user2Lng)
-        ],
-        lineOptions: {
-            addWaypoints: false,
-            styles: [{ color: "#007aff", weight: 4 }]
-        },
+        waypoints: [ L.latLng(user1Lat, user1Lng), L.latLng(user2Lat, user2Lng) ],
+        lineOptions: { addWaypoints: false, styles: [{ color: "#007aff", weight: 4 }] },
         createMarker: () => null
     }).addTo(map);
 
@@ -205,10 +140,10 @@ document.addEventListener("DOMContentLoaded", () => {
         userMarker.bindPopup(`📍 You<br>Distance: ${(distance / 1000).toFixed(2)} km`).openPopup();
         matchedMarker.bindPopup(`🤝 Matched User<br>Distance: ${(distance / 1000).toFixed(2)} km`);
     }
+
     updateDistance();
 
-    // ✅ SOCKET IS INITIALIZED HERE
-    socket = io();
+    socket = io();  // ✅ NOW defined before sendMessage()
 
     const urlParams = new URLSearchParams(window.location.search);
     matchId = urlParams.get("matchId");
@@ -217,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     socket.on("userMoved", ({ lat, lng }) => {
         matchedMarker.setLatLng([lat, lng]);
-        routeControl.setWaypoints([userMarker.getLatLng(), matchedMarker.getLatLng()]);
+        routeControl.setWaypoints([ userMarker.getLatLng(), matchedMarker.getLatLng() ]);
         updateDistance();
     });
 
@@ -227,20 +162,15 @@ document.addEventListener("DOMContentLoaded", () => {
             const lng = pos.coords.longitude;
 
             userMarker.setLatLng([lat, lng]);
-            routeControl.setWaypoints([userMarker.getLatLng(), matchedMarker.getLatLng()]);
+            routeControl.setWaypoints([ userMarker.getLatLng(), matchedMarker.getLatLng() ]);
             updateDistance();
 
             socket.emit("locationUpdate", { matchId, lat, lng });
-        },
-        (err) => console.log("GPS error:", err),
-        { enableHighAccuracy: true }
+        }
     );
-
 });
-</script>
 
-<!-- ✅ MESSAGE SENDING FIXED -->
-<script>
+// ✅ FINAL — ONLY ONE MESSAGE SCRIPT
 function sendMessage() {
     const msg = document.getElementById("msgInput").value;
     if (!msg) return;
@@ -263,7 +193,6 @@ function appendMessage(msg, isMine) {
     container.scrollTop = container.scrollHeight;
 }
 </script>
-
 
 </body>
 </html>

@@ -128,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateDistance(); // initial distance
 
     // ✅ SOCKET.IO HANDLING
-    const socket = io();
+    const socket = io.connect();
     const urlParams = new URLSearchParams(window.location.search);
     const matchId = urlParams.get("matchId");
 

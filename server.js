@@ -125,7 +125,8 @@ app.post("/verify-otp", (req, res) => {
 });
 
 //  Chat Page
-app.get("/chat", async (req, res) => { try {
+app.get("/chat", async (req, res) => {
+  try {
     const matchId = req.query.matchId;
 
     const match = await Match.findById(matchId)
@@ -134,23 +135,22 @@ app.get("/chat", async (req, res) => { try {
 
     if (!match) return res.send("Match not found");
 
-  res.render("chat", { 
-    
-     matchId: req.query.matchId,
+    res.render("chat", {
+      matchId: req.query.matchId,
       user1: match.user1,
       user2: match.user2,
       user1Lat: match.user1.location.coordinates[1],
       user1Lng: match.user1.location.coordinates[0],
       user2Lat: match.user2.location.coordinates[1],
       user2Lng: match.user2.location.coordinates[0]
-   });
-
+    });
 
   } catch (error) {
     console.log("⚠️ Error loading verify page:", error);
     res.status(500).send("Server Error");
   }
 });
+
 
 //  Socket chat system
 io.on("connection", (socket) => {

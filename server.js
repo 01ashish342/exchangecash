@@ -96,18 +96,34 @@ await UserRequest.findByIdAndUpdate(matchedRequest._id, { matched: true }, { new
 
 //  OTP Page
 //  OTP Page + send both user locations
+// ✅ OTP Page with user locations
 app.get("/verify", async (req, res) => {
- 
+  try {
     const matchId = req.query.matchId;
 
-   
+    // Validate ObjectId
+    if (!matchId || matchId.length !== 24) {
+      return res.status(400).send("❌ Invalid Match ID");
+    }
+
+    const match = await Match.findById(matchId)
+      .populate("user1")
+      .populate("user2");
+
+    if (!match) return res.status(404).send("Match not found");
+
     res.render("verify", {
       matchId,
-   
+      user1: match.user1,
+      user2: match.user2
     });
 
-  
+  } catch (error) {
+    console.log("⚠️ Error loading verify page:", error);
+    res.status(500).send("Server Error");
+  }
 });
+
 
 
 

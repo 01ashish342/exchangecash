@@ -142,13 +142,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     updateDistance();
+socket = io();
 
-    socket = io();  // ✅ NOW defined before sendMessage()
+const urlParams = new URLSearchParams(window.location.search);
+matchId = urlParams.get("matchId");
 
-    const urlParams = new URLSearchParams(window.location.search);
-    matchId = urlParams.get("matchId");
+// ✅ join the room
+socket.emit("joinRoom", matchId);
 
-    socket.emit("joinRoom", matchId);
+// ✅ Receive messages (THIS WAS MISSING INSIDE DOMContentLoaded!)
+socket.on("receiveMessage", (data) => {
+    appendMessage(data.message, false);  // show on other screen
+});
+
 
     socket.on("userMoved", ({ lat, lng }) => {
         matchedMarker.setLatLng([lat, lng]);

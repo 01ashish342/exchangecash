@@ -124,13 +124,10 @@ GitHub Copilot assisted in:
 ### Home Page
 ![Home](screenshots/home.png)
 
-### Match Page
-![Match](screenshots/match.png)
-
-### Verification Page
+### OTP Verification Page
 ![Verify](screenshots/verify.png)
 
-### Chat Page
+### Chat & Live Location Page
 ![Chat](screenshots/chat.png)
 
 ---
